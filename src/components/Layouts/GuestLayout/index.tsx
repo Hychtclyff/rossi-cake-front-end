@@ -8,10 +8,10 @@ type GuestLayoutsProps = {
 
 export const GuestLayouts = ({ children }: GuestLayoutsProps) => {
   return (
-    <>
+    <div className="flex min-h-screen flex-col overflow-x-hidden">
       <Navbar />
-      {children}
+      <main className="flex-grow">{children}</main>
       <Footer />
-    </>
+    </div>
   );
 };

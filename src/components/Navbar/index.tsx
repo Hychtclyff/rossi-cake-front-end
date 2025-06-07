@@ -9,10 +9,10 @@ const useAuth = () => {
   return { isLoggedIn };
 };
 
-const NavbarMobile = ({ navItems }) => (
+const NavbarMobile = ({ navItems, isLoggedIn }) => (
   <div className="relative w-full px-28 lg:hidden">
     {/* The mobile navbar now receives dynamic items */}
-    <FloatingNav navItems={navItems} />
+    <FloatingNav navItems={navItems} isLoggedIn={isLoggedIn} />
   </div>
 );
 
@@ -48,7 +48,7 @@ const NavbarPc = ({ isLoggedIn }) => (
           </Link>
         ) : (
           <Link
-            to="/login" // Correct path for the login page
+            to="/auth" // Correct path for the login page
             className="border text-sm font-medium relative border-neutral-200 dark:border-white/[0.2] text-black dark:text-white px-4 py-2 rounded-full"
           >
             <span>Login</span>
@@ -67,16 +67,12 @@ export const Navbar = () => {
   const navItems = [
     { name: "Home", link: "/" },
     { name: "Shop", link: "/shop" },
-    // Add "Akun" or "Login" to the mobile nav items
-    isLoggedIn
-      ? { name: "Akun", link: "/account/user" }
-      : { name: "Login", link: "/login" },
   ];
 
   return (
     <>
       <NavbarPc isLoggedIn={isLoggedIn} />
-      <NavbarMobile navItems={navItems} />
+      <NavbarMobile navItems={navItems} isLoggedIn={isLoggedIn} />
     </>
   );
 };

@@ -6,20 +6,18 @@ import {
   CarouselNext,
   CarouselPrevious,
 } from "@/components/ui/carousel";
-import { promotionsData } from "@/data/home/data";
+import { promotionsData } from "@/data/Banner";
 
 export const PromotionsSection = () => {
   return (
     <div className="flex flex-col gap-5 justify-center items-center py-10">
-      {" "}
-      {/* Added some vertical padding to the section */}
       <h1 className="text-center font-semibold text-3xl">Promo</h1>
       <Carousel
         opts={{
           align: "start",
-          loop: true, // Added loop for a better carousel experience
+          loop: true,
         }}
-        className="w-full max-w-6xl px-4" // Added max-width and horizontal padding for better responsiveness
+        className="w-full max-w-6xl px-4"
       >
         <CarouselContent className="border-none">
           {promotionsData.map((item) => (
@@ -28,26 +26,18 @@ export const PromotionsSection = () => {
               className="md:basis-1/2 lg:basis-1/3 border-none py-10"
             >
               <div className="p-1 h-full">
-                {" "}
-                {/* Added h-full to ensure consistent card height if needed */}
                 <Card className="h-full flex flex-col">
-                  {" "}
-                  {/* Added h-full and flex structure for consistent card height */}
                   <CardHeader className="p-4">
-                    {" "}
-                    {/* Adjusted padding */}
                     <CardTitle className="text-xl">
                       {item.productName}
                     </CardTitle>
                   </CardHeader>
                   <CardContent className="p-4 flex-grow flex flex-col md:flex-row gap-4 items-center">
-                    {" "}
-                    {/* Adjusted padding and flex-grow */}
                     <div className="md:w-2/5 w-full flex-shrink-0">
                       <img
                         src={item.imageUrl}
                         alt={item.imageAlt}
-                        className="w-full h-48 md:h-full object-cover rounded-md" // Adjusted height and object-fit
+                        className="w-full h-48 md:h-full object-cover rounded-md"
                       />
                     </div>
                     <div className="md:w-3/5 w-full flex flex-col gap-3 items-start justify-center">
@@ -93,10 +83,8 @@ export const PromotionsSection = () => {
             </CarouselItem>
           ))}
         </CarouselContent>
-        <CarouselPrevious className="ml-2 md:ml-0" />{" "}
-        {/* Adjusted positioning for smaller screens */}
-        <CarouselNext className="mr-2 md:mr-0" />{" "}
-        {/* Adjusted positioning for smaller screens */}
+        <CarouselPrevious className="ml-2 md:ml-0" />
+        <CarouselNext className="mr-2 md:mr-0" />
       </Carousel>
     </div>
   );

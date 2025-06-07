@@ -4,11 +4,12 @@ import React, { useState, useEffect } from "react"; // Impor useEffect
 import { GuestLayouts } from "@/components/Layouts/GuestLayout";
 import HeaderMarket from "./headerMarket";
 import ListProduct from "./listProduct";
-import { CartItem, Product } from "@/types/product.types";
-import { shopProducts } from "@/data/dumyProducts";
+import { CartItem, ProductProops } from "@/common/types/product.types";
+import { Products } from "@/data/products";
 
-const ShopPage = () => { // Mengganti nama komponen menjadi PascalCase (praktik umum)
-  const [products, setProducts] = useState<Product[]>(shopProducts);
+const ShopPage = () => {
+  // Mengganti nama komponen menjadi PascalCase (praktik umum)
+  const [products] = useState<ProductProops[]>(Products);
   const [cartItems, setCartItems] = useState<CartItem[]>([]);
 
   // --- EFEK UNTUK MEMUAT KERANJANG DARI LOCALSTORAGE ---
@@ -66,7 +67,9 @@ const ShopPage = () => { // Mengganti nama komponen menjadi PascalCase (praktik 
     setCartItems(
       (prevItems) =>
         prevItems
-          .map((item) => (item.id === productId ? { ...item, quantity: newQuantity } : item))
+          .map((item) =>
+            item.id === productId ? { ...item, quantity: newQuantity } : item
+          )
           .filter((item) => item.quantity > 0) // Hapus jika kuantitas jadi 0 atau kurang
     );
   };

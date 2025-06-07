@@ -1,8 +1,8 @@
-// src/features/checkout/konfirmasi/CheckoutConfirmationPage.tsx
+// src/features/checkout/konfirmasi/CheckoutConfirmationPage.tsx (VERSI FINAL)
 "use client";
 
-import React, { useState, useEffect, ReactNode } from "react";
-import { Button } from "@/components/ui/button"; // Digunakan di sub-komponen
+import React, { useState, useEffect, useCallback, useMemo } from "react";
+import { Button } from "@/components/ui/button";
 import {
   Breadcrumb,
   BreadcrumbItem,
@@ -12,100 +12,103 @@ import {
   BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb";
 import {
-  AlertCircle,
   ChevronLeft,
   LoaderCircle,
   ShoppingCart as ShoppingCartIcon,
 } from "lucide-react";
-import { GuestLayouts } from "@/components/Layouts/GuestLayout"; // Pastikan path benar
-import { useRouter } from "@tanstack/react-router";
+import { GuestLayouts } from "@/components/Layouts/GuestLayout";
+import { useRouter, useNavigate } from "@tanstack/react-router"; // Import useNavigate
 import ShippingAddressReview from "./ShippingAddressReview";
 import OrderedItemsSummary from "./OrderTotalsSummary";
 import PaymentDetailsAndAction from "./PaymentDetailsAndAction";
+import { CartItem } from "@/common/types/product.types";
+import {
+  PaymentMethod,
+  ShippingAddress,
+  ShippingOption,
+  Voucher,
+} from "@/common/types/CheckOut.type";
 
-// Impor sub-komponen yang telah dibuat
-// Asumsikan path relatif jika file ada di ./components/
+// --- SIMULASI DATA MASTER (seharusnya dari API) ---
+const dummyPaymentMethods: PaymentMethod[] = [
+  { id: "bca_va", name: "BCA Virtual Account" },
+  { id: "gopay", name: "GoPay" },
+  { id: "cc", name: "Kartu Kredit/Debit" },
+];
 
-// Impor tipe (jika dari file terpisah, misal @/types/shop)
-interface Product {
-  id: string;
-  name: string;
-  price: number;
-  imageUrl: string;
-  weight?: number;
-}
-interface CartItem extends Product {
-  quantity: number;
-  variant?: string;
-}
-interface ShippingAddress {
-  recipientName: string;
-  phone: string;
-  addressLine1: string;
-  city: string;
-  province: string;
-  postalCode: string;
-  isDropshipper?: boolean;
-  dropshipperName?: string;
-  dropshipperPhone?: string;
-}
-interface ShippingOption {
-  id: string;
-  name: string;
-  estimatedDelivery: string;
-  cost: number;
-}
-interface PaymentMethod {
-  id: string;
-  name: string;
-  icon?: React.ReactNode;
-  description?: string;
-}
-interface Voucher {
-  code: string;
-  discountAmount: number;
-  description: string;
-}
+const dummyVouchers: Voucher[] = [
+  { code: "NONE", discountAmount: 0, description: "Tidak ada voucher" },
+  {
+    code: "ROSSIHEMAT10K",
+    discountAmount: 10000,
+    description: "Diskon Rp 10.000",
+  },
+  {
+    code: "KIRIMGRATIS",
+    discountAmount: 18000,
+    description: "Potongan ongkir",
+  },
+];
+
+const dummyShippingOptions: ShippingOption[] = [
+  {
+    id: "sicepat_reg",
+    name: "SiCepat REG",
+    estimatedDelivery: "2-4 Hari",
+    cost: 15000,
+  },
+  {
+    id: "jne_reg",
+    name: "JNE Regular",
+    estimatedDelivery: "2-3 Hari",
+    cost: 18000,
+  },
+  {
+    id: "jnt_express",
+    name: "J&T Express",
+    estimatedDelivery: "1-3 Hari",
+    cost: 20000,
+  },
+];
 
 const CheckoutConfirmationPage: React.FC = () => {
   const router = useRouter();
+  const navigate = useNavigate(); // Gunakan useNavigate untuk navigasi
+
+  // --- STATE MANAGEMENT ---
   const [cartItems, setCartItems] = useState<CartItem[]>([]);
   const [shippingAddress, setShippingAddress] =
     useState<ShippingAddress | null>(null);
-  const [selectedShipping, setSelectedShipping] =
-    useState<ShippingOption | null>(null);
-  const [selectedPaymentMethod, setSelectedPaymentMethod] =
-    useState<PaymentMethod | null>(null);
   const [orderNotes, setOrderNotes] = useState("");
   const [useDamageProtection, setUseDamageProtection] = useState(false);
-  const [appliedVoucher, setAppliedVoucher] = useState<Voucher | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
   const [dataLoaded, setDataLoaded] = useState(false);
 
-  const DAMAGE_PROTECTION_COST_PER_ITEM_TYPE = 5200; // Contoh biaya
+  // State yang akan dikontrol oleh parent dan di-pass ke child
+  const [selectedShipping, setSelectedShipping] = useState<ShippingOption>(
+    dummyShippingOptions[1]
+  );
+  const [selectedPaymentMethod, setSelectedPaymentMethod] =
+    useState<PaymentMethod>(dummyPaymentMethods[0]);
+  const [appliedVoucher, setAppliedVoucher] = useState<Voucher>(
+    dummyVouchers[0]
+  );
+
+  const DAMAGE_PROTECTION_COST_PER_ITEM_TYPE = 5200;
 
   useEffect(() => {
-    // Simulasi pengambilan data dari localStorage atau state global
+    // Simulasi pengambilan data dari localStorage
     const loadedCart = localStorage.getItem("shopCart");
     if (loadedCart) {
       try {
         const parsedCart: CartItem[] = JSON.parse(loadedCart);
         if (Array.isArray(parsedCart) && parsedCart.length > 0) {
           setCartItems(parsedCart);
-        } else {
-          // Arahkan jika keranjang kosong
-          // router.replace('/shop/cart');
-          // return;
         }
       } catch (e) {
         console.error("Error parsing cart from localStorage", e);
       }
-    } else {
-      // router.replace('/shop/cart');
-      // return;
     }
 
-    // Simulasi data lain yang dipilih di langkah checkout sebelumnya
     setShippingAddress({
       recipientName: "Budi Santoso",
       phone: "(+62) 812 3456 7890",
@@ -115,42 +118,49 @@ const CheckoutConfirmationPage: React.FC = () => {
       province: "DKI Jakarta",
       postalCode: "12345",
     });
-    setSelectedShipping({
-      id: "jne_reg",
-      name: "JNE Regular",
-      estimatedDelivery: "2-3 Hari Kerja",
-      cost: 18000,
-    });
-    setSelectedPaymentMethod({
-      id: "bca_va",
-      name: "BCA Virtual Account",
-      description: "Bayar melalui Virtual Account BCA Anda.",
-    });
-    // setAppliedVoucher({ code: "ROSSIHEMAT", discountAmount: 10000, description: "Diskon pelanggan setia." });
+
     setDataLoaded(true);
-  }, [router]);
+  }, []);
 
-  const handlePlaceOrder = async () => {
-    if (!selectedPaymentMethod || cartItems.length === 0 || !shippingAddress) {
-      alert(
-        "Pastikan semua informasi sudah benar dan metode pembayaran dipilih."
-      );
-      return;
-    }
-    setIsLoading(true);
-    const subtotalProduk = cartItems.reduce(
-      (sum, item) => sum + item.price * item.quantity,
-      0
+  // --- HANDLERS UNTUK DI-PASS KE CHILD ---
+  const handleShippingChange = useCallback((shippingId: string) => {
+    const newShipping = dummyShippingOptions.find(
+      (opt) => opt.id === shippingId
     );
-    const biayaProteksi = useDamageProtection
-      ? DAMAGE_PROTECTION_COST_PER_ITEM_TYPE * cartItems.length
-      : 0;
-    const ongkosKirim = selectedShipping?.cost || 0;
-    const potonganVoucher = appliedVoucher?.discountAmount || 0;
-    const totalPembayaran =
-      subtotalProduk + biayaProteksi + ongkosKirim - potonganVoucher;
+    if (newShipping) setSelectedShipping(newShipping);
+  }, []);
 
-    console.log("FINAL ORDER DETAILS:", {
+  const handleVoucherChange = useCallback((voucherCode: string) => {
+    const newVoucher = dummyVouchers.find((v) => v.code === voucherCode);
+    if (newVoucher) setAppliedVoucher(newVoucher);
+  }, []);
+
+  const handlePaymentMethodChange = useCallback((paymentId: string) => {
+    const newPayment = dummyPaymentMethods.find((p) => p.id === paymentId);
+    if (newPayment) setSelectedPaymentMethod(newPayment);
+  }, []);
+
+  // --- FUNGSI FINAL SETELAH KONFIRMASI DARI CHILD ---
+  const handleOrderConfirmed = useCallback(
+    async ({ orderId }: { orderId: string }) => {
+      console.log("FINAL ORDER CONFIRMED with ID:", orderId);
+      console.log("DETAILS:", {
+        cartItems,
+        shippingAddress,
+        selectedShipping,
+        selectedPaymentMethod,
+        orderNotes,
+        useDamageProtection,
+        appliedVoucher,
+      });
+
+      // Hapus keranjang dan arahkan pengguna
+      localStorage.removeItem("shopCart");
+      await new Promise((resolve) => setTimeout(resolve, 300)); // Sedikit delay untuk UX
+      navigate({ to: `/shop/checkout/order-success/${orderId}` });
+    },
+    [
+      navigate,
       cartItems,
       shippingAddress,
       selectedShipping,
@@ -158,27 +168,22 @@ const CheckoutConfirmationPage: React.FC = () => {
       orderNotes,
       useDamageProtection,
       appliedVoucher,
-      totalPembayaran,
-    });
-    await new Promise((resolve) => setTimeout(resolve, 2000));
-
-    localStorage.removeItem("shopCart");
-    setIsLoading(false);
-    router.navigate({ to: `/shop/checkout/order-success/ROSSI${Date.now()}` });
-  };
+    ]
+  );
 
   const handleChangeAddress = () => {
-    // Arahkan pengguna kembali ke halaman/langkah pemilihan alamat
-    // router.push('/shop/checkout/address'); // Contoh
     alert("Fungsi ubah alamat belum diimplementasikan.");
   };
 
-  const handleSelectVoucher = () => {
-    // Buka modal atau arahkan ke halaman pemilihan voucher
-    alert("Fungsi pilih voucher belum diimplementasikan.");
-    // Contoh: setAppliedVoucher({ code: "HEMATLAGI", discountAmount: 15000, description: "Voucher spesial"});
-  };
+  const damageProtectionCost = useMemo(
+    () =>
+      useDamageProtection
+        ? DAMAGE_PROTECTION_COST_PER_ITEM_TYPE * cartItems.length
+        : 0,
+    [useDamageProtection, cartItems.length]
+  );
 
+  // Tampilan Loading dan Keranjang Kosong (tetap sama)
   if (!dataLoaded) {
     return (
       <GuestLayouts>
@@ -188,7 +193,6 @@ const CheckoutConfirmationPage: React.FC = () => {
       </GuestLayouts>
     );
   }
-
   if (cartItems.length === 0 && dataLoaded) {
     return (
       <GuestLayouts>
@@ -198,7 +202,7 @@ const CheckoutConfirmationPage: React.FC = () => {
           <p className="text-muted-foreground mb-6">
             Silakan kembali ke toko untuk memilih produk.
           </p>
-          <Button onClick={() => router.history.back()}>Kembali ke Toko</Button>
+          <Button onClick={() => router.history.go(-1)}>Kembali ke Toko</Button>
         </div>
       </GuestLayouts>
     );
@@ -206,14 +210,14 @@ const CheckoutConfirmationPage: React.FC = () => {
 
   return (
     <GuestLayouts>
-      <div className="container mx-auto px-2 sm:px-4 md:px-6 lg:px-8 py-6 overflow-y-scroll">
+      <div className="container mx-auto px-2 sm:px-4 py-6">
         <Breadcrumb className="mb-6">
           <BreadcrumbList>
             <BreadcrumbItem>
               <Button
                 variant="ghost"
                 size="sm"
-                onClick={() => router.history.back()}
+                onClick={() => router.history.go(-1)}
                 className="text-muted-foreground hover:text-foreground"
               >
                 <ChevronLeft size={16} className="mr-1.5" />
@@ -234,13 +238,10 @@ const CheckoutConfirmationPage: React.FC = () => {
             </BreadcrumbItem>
           </BreadcrumbList>
         </Breadcrumb>
-
-        <h1 className="text-2xl md:text-3xl font-bold tracking-tight text-neutral-900 dark:text-neutral-50 mb-6 md:mb-8">
+        <h1 className="text-2xl md:text-3xl font-bold tracking-tight mb-8">
           Konfirmasi Pesanan & Pembayaran
         </h1>
-
-        {/* Hanya render jika semua data penting sudah ada */}
-        {shippingAddress && selectedShipping && selectedPaymentMethod && (
+        {shippingAddress && (
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 lg:gap-12 items-start">
             <div className="lg:col-span-2 space-y-6">
               <ShippingAddressReview
@@ -258,21 +259,22 @@ const CheckoutConfirmationPage: React.FC = () => {
                 }
               />
             </div>
-
             <div className="lg:col-span-1">
               <PaymentDetailsAndAction
                 cartItems={cartItems}
-                shippingOption={selectedShipping}
-                appliedVoucher={appliedVoucher}
-                paymentMethod={selectedPaymentMethod}
-                damageProtectionCost={
-                  useDamageProtection
-                    ? DAMAGE_PROTECTION_COST_PER_ITEM_TYPE * cartItems.length
-                    : 0
-                }
-                onPlaceOrder={handlePlaceOrder}
-                isLoading={isLoading}
-                onSelectVoucher={handleSelectVoucher}
+                damageProtectionCost={damageProtectionCost}
+                // Teruskan data dan handler ke child
+                shippingOptions={dummyShippingOptions}
+                selectedShipping={selectedShipping}
+                onShippingChange={handleShippingChange}
+                vouchers={dummyVouchers}
+                selectedVoucher={appliedVoucher}
+                onVoucherChange={handleVoucherChange}
+                paymentMethods={dummyPaymentMethods}
+                selectedPaymentMethod={selectedPaymentMethod}
+                onPaymentMethodChange={handlePaymentMethodChange}
+                // Teruskan callback final
+                onOrderConfirmed={handleOrderConfirmed}
               />
             </div>
           </div>
@@ -281,10 +283,5 @@ const CheckoutConfirmationPage: React.FC = () => {
     </GuestLayouts>
   );
 };
-
-// TanStack Router Route Definition (dalam file route terpisah, misal index.tsx atau checkout-konfirmasi.route.tsx)
-// export const Route = createLazyFileRoute("/shop/checkout/konfirmasi")({
-//   component: CheckoutConfirmationPage,
-// });
 
 export default CheckoutConfirmationPage;

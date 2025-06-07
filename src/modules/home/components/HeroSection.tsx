@@ -4,7 +4,7 @@ import {
   CarouselContent,
   CarouselItem,
 } from "@/components/ui/carousel";
-import { heroImages } from "@/data/home/data";
+import { heroImages } from "@/data/Banner";
 
 export const HeroSection = () => {
   return (
@@ -19,11 +19,8 @@ export const HeroSection = () => {
                     <img
                       src={item.src}
                       alt={item.alt || "Gambar hero section Rossi Cake"}
-                      loading="lazy" // Tambahkan ini untuk performa yang lebih baik
-                      className="  h-full w-full object-cover"
-                      // 'absolute inset-0' -> position: absolute; top:0; right:0; bottom:0; left:0;
-                      // 'h-full w-full' -> height: 100%; width: 100%;
-                      // 'object-cover' -> object-fit: cover;
+                      loading="lazy"
+                      className="h-full w-full object-cover object-top md:object-center"
                     />
                   </CardContent>
                 </Card>

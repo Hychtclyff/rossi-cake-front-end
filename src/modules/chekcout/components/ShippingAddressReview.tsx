@@ -2,7 +2,7 @@ import React from "react";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { MapPin, Edit3 } from "lucide-react";
-// import { ShippingAddress } from '@/types/shop'; // Jika tipe dipisah
+import { ShippingAddress } from "@/common/types/CheckOut.type";
 
 interface ShippingAddressReviewProps {
   address: ShippingAddress;

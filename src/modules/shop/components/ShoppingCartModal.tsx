@@ -22,7 +22,7 @@ import { Separator } from "@/components/ui/separator";
 import { IconShoppingCart, IconX } from "@tabler/icons-react";
 import { motion } from "framer-motion";
 import { useNavigate } from "@tanstack/react-router"; // Atau dari next/navigation
-import { CartItem } from "@/types/product.types"; // Asumsi path benar
+import { CartItem } from "@/common/types/product.types"; // Asumsi path benar
 
 interface ShoppingCartModalProps {
   cartItems: CartItem[];

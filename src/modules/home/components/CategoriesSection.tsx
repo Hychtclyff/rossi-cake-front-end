@@ -1,5 +1,5 @@
 import GridItem from "@/components/GridItem";
-import { categoryData } from "@/data/home/data";
+import { categoryData } from "@/data/Banner";
 
 export const CategoriesSection = () => {
   return (

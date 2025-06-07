@@ -2,9 +2,7 @@
 // Gunakan next/image untuk optimasi
 
 import { Button } from "@/components/ui/button";
-import { Product } from "@/types/product.types";
-
-
+import { Product } from "@/common/types/product.types";
 
 interface CardProductProps {
   product: Product;

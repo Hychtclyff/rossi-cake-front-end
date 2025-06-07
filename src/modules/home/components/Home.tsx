@@ -10,7 +10,7 @@ import { PromotionsSection } from "./PromotionsSection";
 export function HomePage() {
   return (
     <GuestLayouts>
-      <div className="container mx-auto px-4 sm:px-10 lg:px-28 pt-24 flex flex-col gap-10">
+      <div className="container mx-auto px-4 sm:px-10 lg:px-28 pt-24 flex flex-col gap-10 m">
         <HeroSection />
         <CategoriesSection />
         <NewArrivalsSection />

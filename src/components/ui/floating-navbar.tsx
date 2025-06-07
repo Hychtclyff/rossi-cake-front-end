@@ -9,14 +9,20 @@ import {
 import { cn } from "@/lib/utils";
 import { Link } from "@tanstack/react-router";
 
+// [FIX] 1. Deklarasikan tipe untuk sebuah item navigasi
+export type NavItem = {
+  name: string;
+  link: string;
+};
+
 export const FloatingNav = ({
   navItems,
+  isLoggedIn,
   className,
 }: {
-  navItems: {
-    name: string;
-    link: string;
-  }[];
+  // [FIX] 2. Gunakan tipe NavItem yang sudah dibuat
+  navItems: NavItem[];
+  isLoggedIn: boolean;
   className?: string;
 }) => {
   const { scrollY } = useScroll();
@@ -25,15 +31,20 @@ export const FloatingNav = ({
 
   useMotionValueEvent(scrollY, "change", (current) => {
     if (typeof current === "number") {
-      let direction = current - lastScrollY.current; // Hitung arah scroll
-
-      if (direction > 0) {
-        setVisible(false); // Scroll ke bawah, sembunyikan
-      } else {
-        setVisible(true); // Scroll ke atas, tampilkan
+      if (scrollY.get() < 200) {
+        setVisible(true);
+        return;
       }
 
-      lastScrollY.current = current; // Simpan posisi terakhir
+      const direction = current - lastScrollY.current;
+
+      if (direction > 5) {
+        setVisible(false);
+      } else if (direction < -5) {
+        setVisible(true);
+      }
+
+      lastScrollY.current = current;
     }
   });
 
@@ -52,11 +63,12 @@ export const FloatingNav = ({
           duration: 0.2,
         }}
         className={cn(
-          "flex max-w-fit  fixed top-5 inset-x-0 mx-auto border border-transparent dark:border-white/[0.2] rounded-full dark:bg-black bg-white shadow-[0px_2px_3px_-1px_rgba(0,0,0,0.1),0px_1px_0px_0px_rgba(25,28,33,0.02),0px_0px_0px_1px_rgba(25,28,33,0.08)] z-[5000] pr-2 pl-8 py-2  items-center justify-center space-x-4",
+          "flex max-w-fit fixed top-5 inset-x-0 mx-auto border border-transparent dark:border-white/[0.2] rounded-full dark:bg-black bg-white shadow-[0px_2px_3px_-1px_rgba(0,0,0,0.1),0px_1px_0px_0px_rgba(25,28,33,0.02),0px_0px_0px_1px_rgba(25,28,33,0.08)] z-[5000] pr-2 pl-8 py-2 items-center justify-center space-x-4",
           className
         )}
       >
-        {navItems.map((navItem: any, idx: number) => (
+        {/* [FIX] 3. Ganti 'any' dengan tipe NavItem */}
+        {navItems.map((navItem: NavItem, idx: number) => (
           <Link
             key={`link=${idx}`}
             to={navItem.link}
@@ -64,17 +76,27 @@ export const FloatingNav = ({
               "relative dark:text-neutral-50 items-center flex space-x-1 text-neutral-600 dark:hover:text-neutral-300 hover:text-neutral-500"
             )}
           >
-            {/* <span className="block sm:hidden">{navItem.icon}</span> */}
             <span className="block text-sm">{navItem.name}</span>
           </Link>
         ))}
-        <Link
-          to="/user/account"
-          className="border text-sm font-medium relative border-neutral-200 dark:border-white/[0.2] text-black dark:text-white px-4 py-2 rounded-full"
-        >
-          <span>Akun</span>
-          <span className="absolute inset-x-0 w-1/2 mx-auto -bottom-px bg-gradient-to-r from-transparent via-blue-500 to-transparent  h-px" />
-        </Link>
+
+        {isLoggedIn ? (
+          <Link
+            to="/account/user"
+            className="border text-sm font-medium relative border-neutral-200 dark:border-white/[0.2] text-black dark:text-white px-4 py-2 rounded-full"
+          >
+            <span>Akun</span>
+            <span className="absolute inset-x-0 w-1/2 mx-auto -bottom-px bg-gradient-to-r from-transparent via-blue-500 to-transparent h-px" />
+          </Link>
+        ) : (
+          <Link
+            to="/auth"
+            className="border text-sm font-medium relative border-neutral-200 dark:border-white/[0.2] text-black dark:text-white px-4 py-2 rounded-full"
+          >
+            <span>Login</span>
+            <span className="absolute inset-x-0 w-1/2 mx-auto -bottom-px bg-gradient-to-r from-transparent via-blue-500 to-transparent h-px" />
+          </Link>
+        )}
       </motion.div>
     </AnimatePresence>
   );

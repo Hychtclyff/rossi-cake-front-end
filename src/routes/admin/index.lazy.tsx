@@ -4,9 +4,6 @@ import { createLazyFileRoute } from "@tanstack/react-router";
 import Admin from "@/modules/Admin";
 
 export const Route = createLazyFileRoute("/admin/")({
-  component: RouteComponent,
+  component: Admin,
 });
 
-function RouteComponent() {
-  return <Admin />;
-}

@@ -25,6 +25,6 @@
       "@/*": ["./src/*"]
     }
   },
-  "include": ["src", "global.d.ts"],
+  "include": ["src", "global.d.ts", "src/common/types", "src/data"],
   "references": [{ "path": "./tsconfig.node.json" }]
 }

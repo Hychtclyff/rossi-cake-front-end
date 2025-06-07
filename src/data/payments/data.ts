@@ -1,5 +1,8 @@
 // src/features/user-account/payments/data.ts
-import { PaymentHistoryItem, SavedPaymentMethod } from "./types";
+import {
+  PaymentHistoryItem,
+  SavedPaymentMethod,
+} from "../../common/types/types";
 
 export const dummyPaymentHistory: PaymentHistoryItem[] = [
   {

@@ -14,7 +14,7 @@ import GridItem from "@/components/GridItem";
 import { Box, Lock, Search, Settings, Sparkles } from "lucide-react";
 import { BackgroundGradient } from "@/components/ui/background-gradient";
 import { GuestLayouts } from "@/components/Layouts/GuestLayout";
-import HomePage from "@/modules/Dashboard";
+import HomePage from "@/modules/home";
 
 export const Route = createLazyFileRoute("/")({
   component: HomePage,

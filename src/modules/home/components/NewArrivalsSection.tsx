@@ -6,13 +6,13 @@ import {
   CarouselNext,
   CarouselPrevious,
 } from "@/components/ui/carousel";
-import { newArrivalsData } from "@/data/home/data";
 import { ProductCard } from "./ProductCard";
-import { CardContent } from "@/components/ui/card";
+import { newArrivals } from "@/data/Banner";
 
 export const NewArrivalsSection = () => {
+  const productsToDisplay = newArrivals();
   return (
-    <div className="flex flex-col gap-6 items-center py-10">
+    <div className="flex flex-col gap-6 items-center py-20">
       <h2 className="text-center font-bold text-4xl text-neutral-800 dark:text-neutral-100">
         Produk Baru Kami
       </h2>
@@ -21,7 +21,7 @@ export const NewArrivalsSection = () => {
         className="w-full max-w-6xl overflow-hidden  "
       >
         <CarouselContent className="-ml-4 ">
-          {newArrivalsData.map((product) => (
+          {productsToDisplay.map((product) => (
             <CarouselItem
               key={product.id}
               className="pl-4 md:basis-1/2 lg:basis-1/3 "

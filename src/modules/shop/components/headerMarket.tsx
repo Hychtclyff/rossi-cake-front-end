@@ -23,19 +23,17 @@ import {
   CommandList,
 } from "@/components/ui/command";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { IconSearch, IconShoppingCart, IconX } from "@tabler/icons-react"; // Tambahkan IconShoppingCart
-import { Calendar } from "lucide-react";
+import { Calendar, Minus, Plus, Search, ShoppingCart, X } from "lucide-react";
 import { useEffect, useState } from "react";
-import { motion } from "motion/react";
-import { Input } from "@/components/ui/input";
-import { CartItem, Product } from "@/types/product.types";
+import { AnimatePresence, motion } from "motion/react";
+import { CartItem } from "@/common/types/product.types";
 import { useNavigate } from "@tanstack/react-router";
 
 interface HeaderMarketProps {
   cartItems: CartItem[];
   onUpdateCartItemQuantity: (productId: string, quantity: number) => void;
   onRemoveCartItem: (productId: string) => void;
-  onClearCart: () => void; // Untuk mengosongkan keranjang
+  onClearCart: () => void;
 }
 
 const HeaderMarket = ({
@@ -46,30 +44,20 @@ const HeaderMarket = ({
 }: HeaderMarketProps) => {
   const [openSearch, setOpenSearch] = useState(false);
   const [valueSearch, setValueSearch] = useState("");
-  const [isCartModalOpen, setIsCartModalOpen] = useState(false);
-  const navigate = useNavigate  ();
+  const navigate = useNavigate();
+
   useEffect(() => {
-    const down = (e: KeyboardEvent) => {
+    const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === "k" && (e.metaKey || e.ctrlKey)) {
         e.preventDefault();
-        setOpenSearch((open) => !open);
+        setOpenSearch((prev) => !prev);
       }
     };
-    document.addEventListener("keydown", down);
-    return () => document.removeEventListener("keydown", down);
+    document.addEventListener("keydown", handleKeyDown);
+    return () => document.removeEventListener("keydown", handleKeyDown);
   }, []);
 
-  const handleSearchChange = (val: string) => {
-    setValueSearch(val);
-    // Logika untuk menampilkan hasil pencarian bisa lebih kompleks,
-    // untuk sekarang, CommandList akan tetap statis atau bisa diisi dari 'val' jika ada data.
-    setOpenSearch(val.trim().length > 0);
-  };
-
-  const handleCheckout = () => {
-    // Navigasi ke halaman checkout
-    navigate({ to: "/shop/checkout" }); // Sesuaikan dengan path halaman checkout Anda
-  };
+  const handleCheckout = () => navigate({ to: "/shop/checkout" });
 
   const totalCartQuantity = cartItems.reduce(
     (sum, item) => sum + item.quantity,
@@ -79,61 +67,70 @@ const HeaderMarket = ({
     (sum, item) => sum + item.price * item.quantity,
     0
   );
-  // Asumsi diskon sederhana, bisa lebih kompleks
-  const discountAmount = totalCartPrice > 200000 ? 25000 : 0; // Contoh: diskon 25rb jika total > 200rb
+  const discountAmount = totalCartPrice > 200000 ? 25000 : 0;
   const finalPrice = totalCartPrice - discountAmount;
 
   return (
-    <>
-      <div className="header flex flex-col md:flex-row flex-wrap items-center justify-between gap-5 mb-6">
-        <div className="path">
-          <Breadcrumb>
-            <BreadcrumbList>
-              <BreadcrumbItem>
-                <BreadcrumbLink href="/">Beranda</BreadcrumbLink>
-              </BreadcrumbItem>
-              <BreadcrumbSeparator>/</BreadcrumbSeparator>
-              <BreadcrumbItem>
-                <BreadcrumbPage>Toko</BreadcrumbPage>
-              </BreadcrumbItem>
-            </BreadcrumbList>
-          </Breadcrumb>
+    <div className="flex lg:flex-row lg:justify-between flex-col gap-4 p-4 md:p-0">
+      <div className="flex justify-between items-center">
+        <Breadcrumb>
+          <BreadcrumbList>
+            <BreadcrumbItem>
+              <BreadcrumbLink href="/">Beranda</BreadcrumbLink>
+            </BreadcrumbItem>
+            <BreadcrumbSeparator />
+            <BreadcrumbItem>
+              <BreadcrumbPage>Toko</BreadcrumbPage>
+            </BreadcrumbItem>
+          </BreadcrumbList>
+        </Breadcrumb>
+      </div>
+
+      <div className="flex flex-col md:flex-row items-center gap-3">
+        {/* [FIXED] Search bar sekarang mengambil lebar penuh di mobile */}
+        <div className="relative w-full md:max-w-xs lg:max-w-sm">
+          <Command className="rounded-lg border shadow-sm h-auto">
+            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-500" />
+            <CommandInput
+              value={valueSearch}
+              onValueChange={setValueSearch}
+              onFocus={() => setOpenSearch(true)}
+              onBlur={() => setTimeout(() => setOpenSearch(false), 150)}
+              placeholder="Cari produk..."
+              className="pl-9"
+            />
+            {/* [FIXED] Daftar pencarian sekarang muncul di atas konten lain */}
+            <AnimatePresence>
+              {openSearch && valueSearch && (
+                <motion.div
+                  initial={{ opacity: 0, y: -5 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -5 }}
+                  className="absolute top-full mt-1 w-full bg-white dark:bg-slate-800 border rounded-md shadow-lg z-50"
+                >
+                  <CommandList>
+                    <CommandEmpty>Tidak ada hasil ditemukan.</CommandEmpty>
+                    <CommandGroup heading="Saran">
+                      <CommandItem
+                        onSelect={() => console.log("Navigasi ke Kalender")}
+                      >
+                        <Calendar className="mr-2 h-4 w-4" />
+                        <span>Kalender Promo</span>
+                      </CommandItem>
+                    </CommandGroup>
+                  </CommandList>
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </Command>
         </div>
 
-        <div className="flex items-center gap-4 w-full md:w-auto">
-          {/* Search Command */}
-          <div className="flex-grow md:flex-grow-0 relative md:w-1/2 min-w-[200px] md:min-w-[350px] max-w-lg">
-            <Command className="rounded-lg border shadow-md h-auto">
-              <IconSearch className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-neutral-500" />
-              <CommandInput
-                value={valueSearch}
-                onValueChange={handleSearchChange}
-                placeholder="Cari produk atau perintah..."
-                className="pl-9"
-              />
-              <CommandList
-                className={`${openSearch ? "block" : "hidden"} absolute top-full mt-1 w-full bg-white dark:bg-neutral-800 border rounded-md shadow-lg z-50`}
-              >
-                <CommandEmpty>Tidak ada hasil ditemukan.</CommandEmpty>
-                {/* Command items bisa diisi dinamis berdasarkan hasil pencarian atau tetap statis */}
-                <CommandGroup heading="Saran">
-                  <CommandItem
-                    onSelect={() => console.log("Navigasi ke Kalender")}
-                  >
-                    <Calendar className="mr-2 h-4 w-4" />
-                    <span>Kalender Promo</span>
-                  </CommandItem>
-                  {/* ... item lainnya ... */}
-                </CommandGroup>
-              </CommandList>
-            </Command>
-          </div>
-
-          {/* Cart Modal Trigger */}
-          <Modal open={isCartModalOpen} onOpenChange={setIsCartModalOpen}>
-            <ModalTrigger asChild>
-              <Button variant="outline" className="relative">
-                <IconShoppingCart size={20} className="mr-2" />
+        {/* [FIXED] Tombol keranjang sekarang di sebelah kanan dan mengambil lebar sisa di mobile */}
+        <div className="w-full md:w-auto flex justify-end ">
+          <Modal>
+            <ModalTrigger>
+              <Button variant="outline" className="relative w-full md:w-auto">
+                <ShoppingCart size={20} className="mr-2" />
                 Keranjang
                 {totalCartQuantity > 0 && (
                   <span className="absolute -top-2 -right-2 bg-sky-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
@@ -142,47 +139,38 @@ const HeaderMarket = ({
                 )}
               </Button>
             </ModalTrigger>
-            <ModalBody className="overflow-y-auto">
-              {" "}
-              {/* Ganti ModalBody agar bisa di-scroll jika konten panjang */}
+            <ModalBody>
               <ModalContent>
-                <h4 className="text-lg md:text-2xl text-neutral-700 dark:text-neutral-200 font-bold text-center mb-6">
+                <h4 className="text-lg md:text-2xl text-slate-700 dark:text-slate-200 font-bold text-center mb-6">
                   Keranjang Belanja Anda
                 </h4>
                 {cartItems.length > 0 ? (
                   <>
-                    <ScrollArea className="h-[20rem] md:h-[25rem] pr-3 mb-4">
-                      {" "}
-                      {/* ScrollArea untuk daftar item */}
+                    <ScrollArea className="h-[35vh] pr-3 mb-4 ">
                       {cartItems.map((item) => (
-                        <motion.div // Menggunakan framer-motion
-                          layout // Untuk animasi saat item ditambah/dihapus
+                        <div
                           key={item.id}
-                          className="p-3 flex flex-col sm:flex-row justify-between items-start sm:items-center hover:bg-neutral-100 dark:hover:bg-neutral-800 rounded-xl mb-3 border-b dark:border-neutral-700 last:border-b-0"
+                          className="flex justify-between items-center py-3 border-b dark:border-slate-700"
                         >
-                          <div className="flex items-center gap-3 mb-2 sm:mb-0">
-                            <div className="relative h-14 w-14">
-                              <img
-                                src={item.imageUrl}
-                                alt={item.name}
-                                className="rounded-md"
-                              />
-                            </div>
+                          <div className="flex items-center gap-3">
+                            <img
+                              src={item.imageUrl}
+                              alt={item.name}
+                              className="rounded-md h-14 w-14 object-cover"
+                            />
                             <div>
-                              <h3 className="font-medium text-neutral-800 dark:text-neutral-200 text-sm">
+                              <h3 className="font-medium text-slate-800 dark:text-slate-200 text-sm">
                                 {item.name}
                               </h3>
-                              <p className="text-xs text-neutral-500 dark:text-neutral-400">
+                              <p className="text-xs text-slate-500 dark:text-slate-400">
                                 Rp{item.price.toLocaleString("id-ID")}
                               </p>
                             </div>
                           </div>
-
                           <div className="flex items-center gap-2">
                             <Button
                               size="icon"
-                              variant="outline"
-                              className="h-7 w-7"
+                              variant="ghost"
                               onClick={() =>
                                 onUpdateCartItemQuantity(
                                   item.id,
@@ -190,17 +178,15 @@ const HeaderMarket = ({
                                 )
                               }
                             >
-                              -
+                              {" "}
+                              <Minus size={14} />{" "}
                             </Button>
-                            <Input
-                              value={item.quantity}
-                              readOnly
-                              className="text-center w-10 h-7 p-0"
-                            />
+                            <span className="w-5 text-center text-sm">
+                              {item.quantity}
+                            </span>
                             <Button
                               size="icon"
-                              variant="outline"
-                              className="h-7 w-7"
+                              variant="ghost"
                               onClick={() =>
                                 onUpdateCartItemQuantity(
                                   item.id,
@@ -208,22 +194,23 @@ const HeaderMarket = ({
                                 )
                               }
                             >
-                              +
+                              {" "}
+                              <Plus size={14} />{" "}
                             </Button>
                             <Button
                               size="icon"
                               variant="ghost"
-                              className="h-7 w-7 text-red-500 hover:text-red-600"
+                              className="text-red-500 hover:text-red-600"
                               onClick={() => onRemoveCartItem(item.id)}
                             >
-                              <IconX size={16} />
+                              {" "}
+                              <X size={16} />{" "}
                             </Button>
                           </div>
-                        </motion.div>
+                        </div>
                       ))}
                     </ScrollArea>
-                    <hr className="my-4 dark:border-neutral-700" />
-                    {/* Ringkasan Keranjang */}
+                    <hr className="my-4 dark:border-slate-700" />
                     <div className="space-y-2 text-sm">
                       <div className="flex justify-between">
                         <span>Subtotal ({totalCartQuantity} item)</span>
@@ -244,18 +231,22 @@ const HeaderMarket = ({
                     </div>
                   </>
                 ) : (
-                  <p className="text-center text-neutral-500 dark:text-neutral-400 py-10">
+                  <p className="text-center text-slate-500 dark:text-slate-400 py-10">
                     Keranjang Anda kosong.
                   </p>
                 )}
               </ModalContent>
               {cartItems.length > 0 && (
-                <ModalFooter className="gap-3 pt-6">
-                  <Button variant="outline" onClick={onClearCart}>
+                <ModalFooter className="flex-col sm:flex-row gap-2">
+                  <Button
+                    variant="outline"
+                    onClick={onClearCart}
+                    className="w-full sm:w-auto"
+                  >
                     Kosongkan Keranjang
                   </Button>
                   <Button
-                    className="w-full sm:w-auto flex-grow bg-sky-600 hover:bg-sky-700"
+                    className="w-full sm:w-auto bg-sky-600 hover:bg-sky-700"
                     onClick={handleCheckout}
                   >
                     Lanjut ke Pembayaran
@@ -266,7 +257,7 @@ const HeaderMarket = ({
           </Modal>
         </div>
       </div>
-    </>
+    </div>
   );
 };
 

@@ -1,4 +1,6 @@
-import React from "react";
+// src/features/checkout/konfirmasi/PaymentDetailsAndAction.tsx (VERSI FINAL YANG DIPERBAIKI)
+
+import React, { useState, useCallback, useMemo } from "react";
 import {
   Card,
   CardHeader,
@@ -8,79 +10,140 @@ import {
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
+import { Input } from "@/components/ui/input";
+import { Tag, ShieldCheck, LoaderCircle, CheckCircle2 } from "lucide-react";
 import {
-  Tag,
-  CreditCard as CreditCardIcon,
-  Landmark as LandmarkIcon,
-  Wallet as WalletIcon,
-  ShieldCheck,
-  LoaderCircle,
-} from "lucide-react"; // Menggunakan alias untuk CreditCard
-import { CartItem } from "@/types/product.types";
-// import { CartItem, ShippingOption, PaymentMethod, Voucher } from '@/types/shop';
+  Select,
+  SelectContent,
+  SelectGroup,
+  SelectItem,
+  SelectLabel,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  PaymentMethod,
+  Voucher,
+  ShippingOption,
+} from "@/common/types/CheckOut.type";
+import { IconPackageExport, IconWallet } from "@tabler/icons-react";
+// import { useNavigate } from "@tanstack/react-router"; // DIHAPUS: Tidak digunakan di komponen ini
+import { CartItem } from "@/common/types/product.types";
 
 interface PaymentDetailsAndActionProps {
   cartItems: CartItem[];
-  shippingOption: ShippingOption;
-  appliedVoucher?: Voucher | null;
-  paymentMethod: PaymentMethod;
   damageProtectionCost: number;
-  onPlaceOrder: () => void;
-  isLoading: boolean;
-  onSelectVoucher: () => void;
+  shippingOptions: ShippingOption[];
+  selectedShipping: ShippingOption;
+  onShippingChange: (shippingId: string) => void;
+  vouchers: Voucher[];
+  selectedVoucher: Voucher | null;
+  onVoucherChange: (voucherCode: string) => void;
+  paymentMethods: PaymentMethod[];
+  selectedPaymentMethod: PaymentMethod;
+  onPaymentMethodChange: (paymentId: string) => void;
+  onOrderConfirmed: (details: { orderId: string }) => void;
 }
+
+type OrderStatus = "idle" | "processing" | "waiting_payment" | "confirmed";
 
 const PaymentDetailsAndAction: React.FC<PaymentDetailsAndActionProps> = ({
   cartItems,
-  shippingOption,
-  appliedVoucher,
-  paymentMethod,
   damageProtectionCost,
-  onPlaceOrder,
-  isLoading,
-  onSelectVoucher,
+  shippingOptions,
+  selectedShipping,
+  onShippingChange,
+  vouchers,
+  selectedVoucher,
+  onVoucherChange,
+  paymentMethods,
+  onPaymentMethodChange,
+  selectedPaymentMethod,
+  onOrderConfirmed,
 }) => {
-  const subtotalProduk = cartItems.reduce(
-    (sum, item) => sum + item.price * item.quantity,
-    0
-  );
-  const ongkosKirim = shippingOption.cost;
-  const potonganVoucher = appliedVoucher?.discountAmount || 0;
-  const totalPembayaran =
-    subtotalProduk + damageProtectionCost + ongkosKirim - potonganVoucher;
+  const [orderStatus, setOrderStatus] = useState<OrderStatus>("idle");
+  const [paymentCode, setPaymentCode] = useState<string | null>(null);
 
-  const getPaymentMethodIcon = (pm: PaymentMethod) => {
-    // Logika ini bisa diperluas atau dipindah ke komponen PaymentMethodIcon jika lebih kompleks
-    if (
-      pm.name.toLowerCase().includes("bca") ||
-      pm.name.toLowerCase().includes("mandiri") ||
-      pm.name.toLowerCase().includes("transfer")
-    ) {
-      return (
-        <LandmarkIcon
-          size={18}
-          className="text-neutral-600 dark:text-neutral-400"
-        />
+  const { subtotalProduk, ongkosKirim, potonganVoucher, totalPembayaran } =
+    useMemo(() => {
+      const subtotal = cartItems.reduce(
+        (sum, item) => sum + item.price * item.quantity,
+        0
       );
+      const shippingCost = selectedShipping.cost;
+      const voucherDiscount = selectedVoucher?.discountAmount || 0;
+      const total =
+        subtotal + damageProtectionCost + shippingCost - voucherDiscount;
+      return {
+        subtotalProduk: subtotal,
+        ongkosKirim: shippingCost,
+        potonganVoucher: voucherDiscount,
+        totalPembayaran: total,
+      };
+    }, [cartItems, selectedShipping, selectedVoucher, damageProtectionCost]);
+
+  // Handler ini benar, karena ia melakukan dua hal: memanggil handler parent DAN mereset state internal.
+  const handlePaymentChange = useCallback(
+    (paymentId: string) => {
+      onPaymentMethodChange(paymentId);
+      setOrderStatus("idle");
+      setPaymentCode(null);
+    },
+    [onPaymentMethodChange]
+  );
+
+  const handlePrimaryAction = () => {
+    if (orderStatus === "idle") {
+      setOrderStatus("processing");
+      setTimeout(() => {
+        const newPaymentCode = `${selectedPaymentMethod.id.toUpperCase()}-${Math.floor(
+          100000 + Math.random() * 900000
+        )}`;
+        setPaymentCode(newPaymentCode);
+        setOrderStatus("waiting_payment");
+      }, 1500);
     }
-    if (
-      pm.name.toLowerCase().includes("gopay") ||
-      pm.name.toLowerCase().includes("ovo")
-    ) {
-      return (
-        <WalletIcon
-          size={18}
-          className="text-neutral-600 dark:text-neutral-400"
-        />
-      );
+
+    if (orderStatus === "waiting_payment") {
+      setOrderStatus("processing");
+      setTimeout(() => {
+        const orderId = `ROSSI${Date.now()}`;
+        setOrderStatus("confirmed");
+        onOrderConfirmed({ orderId });
+      }, 2000);
     }
-    return (
-      <CreditCardIcon
-        size={18}
-        className="text-neutral-600 dark:text-neutral-400"
-      />
-    );
   };
+
+  // DIIMPLEMENTASIKAN: Logika tombol yang sebelumnya hilang
+  const primaryButton = useMemo(() => {
+    switch (orderStatus) {
+      case "processing":
+        return {
+          text: "Memproses...",
+          icon: <LoaderCircle className="animate-spin mr-2 h-5 w-5" />,
+          disabled: true,
+        };
+      case "waiting_payment":
+        return {
+          text: "Konfirmasi Pembayaran",
+          icon: <ShieldCheck className="mr-2 h-5 w-5" />,
+          disabled: false,
+        };
+      case "confirmed":
+        return {
+          text: "Pesanan Dikonfirmasi",
+          icon: <CheckCircle2 className="mr-2 h-5 w-5" />,
+          disabled: true,
+        };
+      case "idle":
+      default:
+        return {
+          text: "Buat Kode Bayar",
+          icon: <ShieldCheck className="mr-2 h-5 w-5" />,
+          disabled: false,
+        };
+    }
+  }, [orderStatus]);
 
   return (
     <div className="space-y-6">
@@ -110,15 +173,16 @@ const PaymentDetailsAndAction: React.FC<PaymentDetailsAndActionProps> = ({
           )}
           <div className="flex justify-between">
             <span className="text-neutral-600 dark:text-neutral-400">
-              Ongkos Kirim ({shippingOption.name})
+              Ongkos Kirim ({selectedShipping.name})
             </span>
             <span className="text-neutral-800 dark:text-neutral-100">
               Rp{ongkosKirim.toLocaleString("id-ID")}
             </span>
           </div>
-          {appliedVoucher && (
+          {/* DIPERBAIKI: Pengecekan null-safe untuk selectedVoucher */}
+          {selectedVoucher && selectedVoucher.code !== "NONE" && (
             <div className="flex justify-between text-green-600 dark:text-green-400">
-              <span>Voucher ({appliedVoucher.code})</span>
+              <span>Voucher ({selectedVoucher.code})</span>
               <span>- Rp{potonganVoucher.toLocaleString("id-ID")}</span>
             </div>
           )}
@@ -129,53 +193,101 @@ const PaymentDetailsAndAction: React.FC<PaymentDetailsAndActionProps> = ({
           </div>
         </CardContent>
         <CardFooter className="flex flex-col gap-4 pt-4 border-t dark:border-neutral-700">
-          <div className="w-full">
-            <p className="text-xs font-medium mb-1 text-neutral-700 dark:text-neutral-300">
-              Metode Pembayaran Dipilih:
-            </p>
-            <div className="flex items-center gap-2 p-2.5 border rounded-md dark:border-neutral-600 bg-muted/30 dark:bg-neutral-800/50">
-              {getPaymentMethodIcon(paymentMethod)}
-              <span className="text-sm font-medium text-neutral-800 dark:text-neutral-100">
-                {paymentMethod.name}
-              </span>
+          <div className="w-full flex flex-col gap-3">
+            <div className="flex items-center justify-between gap-2">
+              <IconWallet className="h-5 w-5 text-neutral-500" />
+              <Select
+                // DIPERBAIKI: Menggunakan nama handler yang benar
+                onValueChange={handlePaymentChange}
+                value={selectedPaymentMethod.id}
+              >
+                <SelectTrigger className="w-full">
+                  <SelectValue placeholder="Pilih Pembayaran" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectGroup>
+                    <SelectLabel>Metode Pembayaran</SelectLabel>
+                    {/* DIPERBAIKI: Melakukan .map() pada props 'paymentMethods' */}
+                    {paymentMethods.map((p) => (
+                      <SelectItem key={p.id} value={p.id}>
+                        {p.name}
+                      </SelectItem>
+                    ))}
+                  </SelectGroup>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="flex items-center justify-between gap-2">
+              <Tag className="h-5 w-5 text-orange-500" />
+              <Select
+                // DIPERBAIKI: Langsung memanggil handler dari props
+                onValueChange={onVoucherChange}
+                // DIPERBAIKI: Pengecekan null-safe
+                value={selectedVoucher?.code || "NONE"}
+              >
+                <SelectTrigger className="w-full">
+                  <SelectValue placeholder="Gunakan Voucher" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectGroup>
+                    <SelectLabel>Gunakan Voucher Rossi Cake</SelectLabel>
+                    {/* DIPERBAIKI: Melakukan .map() pada props 'vouchers' */}
+                    {vouchers.map((v) => (
+                      <SelectItem key={v.code} value={v.code}>
+                        {v.description}
+                      </SelectItem>
+                    ))}
+                  </SelectGroup>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="flex items-center justify-between gap-2">
+              <IconPackageExport className="h-5 w-5 text-neutral-500" />
+              <Select
+                // DIPERBAIKI: Langsung memanggil handler dari props
+                onValueChange={onShippingChange}
+                value={selectedShipping.id}
+              >
+                <SelectTrigger className="w-full">
+                  <SelectValue placeholder="Pilih Pengiriman" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectGroup>
+                    <SelectLabel>Metode Pengiriman</SelectLabel>
+                    {/* DIPERBAIKI: Melakukan .map() pada props 'shippingOptions' */}
+                    {shippingOptions.map((s) => (
+                      <SelectItem key={s.id} value={s.id}>
+                        {s.name} (Rp{s.cost.toLocaleString("id-ID")})
+                      </SelectItem>
+                    ))}
+                  </SelectGroup>
+                </SelectContent>
+              </Select>
             </div>
           </div>
+          {paymentCode && orderStatus !== "idle" && (
+            <div className="w-full flex flex-col gap-2 pt-2">
+              <p className="text-xs font-medium text-neutral-700 dark:text-neutral-300">
+                Selesaikan pembayaran dengan kode berikut:
+              </p>
+              <Input
+                readOnly
+                value={paymentCode}
+                className="text-center font-mono tracking-widest text-base bg-neutral-100 dark:bg-neutral-800 border-neutral-300 dark:border-neutral-600"
+              />
+            </div>
+          )}
           <Button
-            onClick={onPlaceOrder}
-            disabled={isLoading}
-            className="w-full bg-green-600 hover:bg-green-700 text-lg py-3"
+            onClick={handlePrimaryAction}
+            disabled={primaryButton.disabled}
+            className="w-full text-md py-3 mt-2"
+            size="lg"
+            variant={orderStatus === "confirmed" ? "secondary" : "default"}
           >
-            {isLoading ? (
-              <LoaderCircle className="animate-spin mr-2 h-5 w-5" />
-            ) : (
-              <ShieldCheck className="mr-2 h-5 w-5" />
-            )}
-            {isLoading ? "Memproses..." : "Konfirmasi & Bayar"}
+            {primaryButton.icon}
+            {primaryButton.text}
           </Button>
         </CardFooter>
-      </Card>
-
-      <Card className="shadow-sm dark:border-neutral-700">
-        <CardContent className="p-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <Tag className="h-5 w-5 text-orange-500" />
-              <span className="text-sm font-medium text-neutral-800 dark:text-neutral-100">
-                {appliedVoucher
-                  ? `Voucher Terpasang: ${appliedVoucher.code}`
-                  : "Gunakan Voucher Rossi Cake"}
-              </span>
-            </div>
-            <Button
-              variant="link"
-              size="sm"
-              className="text-xs text-sky-600 dark:text-sky-400 p-0 h-auto"
-              onClick={onSelectVoucher}
-            >
-              {appliedVoucher ? "Ganti" : "Pilih Voucher"}
-            </Button>
-          </div>
-        </CardContent>
       </Card>
     </div>
   );

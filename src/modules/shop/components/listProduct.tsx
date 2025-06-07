@@ -2,11 +2,11 @@
 import { HoverBorderGradient } from "@/components/ui/hover-border-gradient"; // Asumsi path ini benar
 import CardProduct from "./cardProduct";
 import { useState } from "react";
-import { Product } from "@/types/product.types";
+import { ProductProops } from "@/common/types/product.types";
 
 interface ListProductProps {
-  products: Product[];
-  onAddToCart: (product: Product) => void;
+  products: ProductProops[];
+  onAddToCart: (product: ProductProops) => void;
 }
 
 const ListProduct = ({ products, onAddToCart }: ListProductProps) => {
@@ -17,7 +17,7 @@ const ListProduct = ({ products, onAddToCart }: ListProductProps) => {
     "Roti",
     "Donat",
     "Minuman",
-  ]; 
+  ];
   const [selectedCategory, setSelectedCategory] = useState("Semua");
 
   const filteredProducts =
